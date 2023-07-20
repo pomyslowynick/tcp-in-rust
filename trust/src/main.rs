@@ -32,8 +32,7 @@ fn main() -> io::Result<()> {
                     // not TCP packet
                     continue;
                 }
-                match etherparse::TcpHeaderSlice::from_slice(&buf[iphdr.slice().len()..nbytes])
-                {
+                match etherparse::TcpHeaderSlice::from_slice(&buf[iphdr.slice().len()..nbytes]) {
                     Ok(tcphdr) => {
                         use std::collections::hash_map::Entry;
                         let datai = iphdr.slice().len() + tcphdr.slice().len();
@@ -44,7 +43,12 @@ fn main() -> io::Result<()> {
                             dst: (ip_dst, tcp_dest_port),
                         }) {
                             Entry::Occupied(mut c) => {
-                                c.get_mut().on_packet(&mut nic, iphdr, tcphdr, &buf[datai..nbytes])?;
+                                c.get_mut().on_packet(
+                                    &mut nic,
+                                    iphdr,
+                                    tcphdr,
+                                    &buf[datai..nbytes],
+                                )?;
                             }
                             Entry::Vacant(mut e) => {
                                 if let Some(c) = tcp::Connection::accept(
