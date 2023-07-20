@@ -1,8 +1,7 @@
 use std::io;
 
 pub enum State {
-    Closed,
-    Listen,
+    //Listen,
     SynRcvd,
     Established,
 }
@@ -121,19 +120,25 @@ impl Connection {
             iph.source(),
         );
 
+        let payload = [0u8; 0];
+        syn_ack.checksum = syn_ack.calc_checksum_ipv4(&ip, &payload).expect("failed to compute checksum");
+         
         // This is some Rust magic from Jon, where the slice pointer for buf, assigned to
         // unwritten moves furter as we write to buf. So the final returned length is
         // however much space is left in the buf, after we wrote to it.
         //
+        eprintln!("received ip packet is: {:02x?}", iph);
+        eprintln!("received tcp packet is: {:02x?}", tcph);
+
         let mut unwritten = {
             let mut unwritten = &mut buf[..];
             ip.write(&mut unwritten);
             syn_ack.write(&mut unwritten);
             unwritten.len()
         };
-        nic.send(&buf[..unwritten])?;
+        nic.send(&buf[..buf.len() - unwritten])?;
+        eprintln!("packet we want to send is {:02x?}", &buf[..buf.len() - unwritten]);
         return Ok(Some(c));
-        return Ok(None);
     }
 
     pub fn on_packet<'a>(
@@ -143,6 +148,14 @@ impl Connection {
         tcph: etherparse::TcpHeaderSlice<'a>,
         data: &'a [u8],
     ) -> io::Result<()> {
-        unimplemented!();
+        match self.state {
+            State::SynRcvd => {
+                Ok(())
+            },
+            State::Established => {
+                unimplemented!();
+            }
+
+        }
     }
 }
