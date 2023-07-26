@@ -11,6 +11,12 @@ struct Quad {
 }
 
 fn main() -> io::Result<()> {
+    // we keep a Hashmap of connections
+    // each connection has a Quad associated with it (IPs and Ports of both rcv and snd)
+    // connection:
+    //  state: one of the TCP states
+    //  recv: RecSeqSpace, it holds the values related to management of received flags, window size
+    //  and the next segment number
     let mut connections: HashMap<Quad, tcp::Connection> = Default::default();
     let mut nic = tun_tap::Iface::without_packet_info("tun0", tun_tap::Mode::Tun)?;
     let mut buf = [0u8; 1504];
@@ -50,7 +56,7 @@ fn main() -> io::Result<()> {
                                     &buf[datai..nbytes],
                                 )?;
                             }
-                            Entry::Vacant(mut e) => {
+                            Entry::Vacant(e) => {
                                 if let Some(c) = tcp::Connection::accept(
                                     &mut nic,
                                     iphdr,
@@ -80,5 +86,4 @@ fn main() -> io::Result<()> {
             }
         }
     }
-    Ok(())
 }
